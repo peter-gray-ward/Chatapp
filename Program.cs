@@ -30,12 +30,14 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddSignalR(); // Corrected typo
+builder.Services.AddSingleton<ChatHub>();
 
 builder.Services.AddDbContext<ChatAppContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add JWT and Cookie authentication
-byte[] key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]);
+byte[] key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new ArgumentNullException("Jwt:Key")); // Added null check
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -100,8 +102,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/chatapp-hub");
 
-ChatAppContext.RunSqlScript(builder.Configuration.GetConnectionString("DefaultConnection"), "./InitDatabase.sql");
+ChatAppContext.RunSqlScript(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new ArgumentNullException("DefaultConnection"), "./InitDatabase.sql"); // Added null check
 
 app.Run();
 

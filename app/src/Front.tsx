@@ -1,5 +1,5 @@
 import './App.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import App from './App';
 import Login from './Login';
 import { xhr } from './util';
@@ -25,7 +25,7 @@ export default function Front() {
         loading ? <div id="Front">
             <h1>Chatapp Front</h1>
         </div> : (
-            authenticated ? <App /> : <Login />
+            authenticated ? <App /> : <Login setAuthenticated={setAuthenticated} />
         )
     );
 }

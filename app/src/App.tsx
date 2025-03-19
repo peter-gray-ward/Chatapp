@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import './App.scss';
 import { User, ChatModalItems } from './types';
 import Modal from './Modal';
+import * as signalR from '@microsoft/signalr'
 
 const initialState = {
   user: { } as User
@@ -15,6 +16,7 @@ function App() {
   const [pagePositions, setPagePositions] = useState({
     chatsModalOrigin: { top: 0, left: 0 }
   });
+  const [connection, setConnection] = useState<signalR.HubConnection|null>(null);
   const chatsModalOrigin = useRef<HTMLButtonElement|null>(null);
 
   const handleResize = () => {
@@ -33,6 +35,31 @@ function App() {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    const newConnection = new signalR.HubConnectionBuilder()
+      .withUrl("http://localhost:5156/chatapp-hub")
+      .withAutomaticReconnect()
+      .build();
+
+    console.log("SignalR connection created", newConnection);
+
+    setConnection(newConnection);
+  }, []);
+
+  useEffect(() => {
+    if (connection) {
+      connection.start()
+        .then(() => {
+          console.log('Connected to SignalR hub');
+
+          connection.on('ReceiveMessage', (user, message) => {
+            console.log(`Message from ${user}: ${message}`);
+          });
+        })
+        .catch(error => console.error('Connection failed: ', error));
+    }
+  }, [connection]);
 
   return (
     <div className="App">
