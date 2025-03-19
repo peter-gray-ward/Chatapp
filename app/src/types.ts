@@ -5,8 +5,20 @@ export interface RequestOptions {
     body?: any;
 }
 
+export interface UserLoginRequest {
+    UserName: string;
+    Password: string;
+}
+
 export interface User {
     Id: string;
     UserName: string;
-    ProfileThumbnailBase64: string;
+    Password: string;
+    ProfileThumbnailBase64?: string;
 }
+
+export interface UserLoginResponse {
+    User: User,
+    Token: string;
+}
+

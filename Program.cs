@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
+using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
 using System.Collections.Generic;
 using System.Data;
@@ -12,6 +13,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using ChatApp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,17 +28,20 @@ builder.Services.AddCors(options =>
                         .AllowCredentials()); // Required if frontend sends cookies/auth
 });
 
-builder.Services.AddOpenApi();
-builder.Services.AddScoped<DbService>();
+builder.Services.AddControllers();
+builder.Services.AddScoped<TokenService>();
+
+builder.Services.AddDbContext<ChatAppContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add JWT and Cookie authentication
-var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]);
+byte[] key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]);
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer(options =>
+.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -46,29 +53,55 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
-})
-.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-{
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Strict;
-    options.Cookie.Name = "AuthCookie";
+
+    options.MapInboundClaims = false;
+
+    // Allow reading JWT from cookies first, then Authorization header
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            if (string.IsNullOrEmpty(context.Token))
+            {
+                var jwtCookie = context.Request.Cookies["chatapp-jwt"];
+                Console.WriteLine($"\nToken from cookie: {jwtCookie}\n"); // Add this line for debugging
+                if (!string.IsNullOrEmpty(jwtCookie))
+                {
+                    context.Token = jwtCookie;
+                }
+            }
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine("Token validated successfully");
+            return Task.CompletedTask;
+        }
+    };
 });
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 
 var app = builder.Build();
 
 app.UseCors("AllowFrontend");
-
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
 
 app.UseHttpsRedirection();
 
 // Enable authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllers();
+
+ChatAppContext.RunSqlScript(builder.Configuration.GetConnectionString("DefaultConnection"), "./InitDatabase.sql");
 
 app.Run();
 

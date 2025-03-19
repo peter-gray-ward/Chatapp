@@ -1,3 +1,89 @@
+#Front {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: skyblue;
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+}
+
+#Login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  height: 100vh;
+  width: 100vw;
+
+  h1 {
+    color: skyblue;
+    font-size: 4rem;
+  }
+
+  .Tabs {
+    width: 64vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    > button {
+      background: transparent;
+      margin-bottom: 2rem;
+      border: none;
+      &:focus {
+        outline: none;
+      }
+      &.active {
+        border-bottom: 2px solid skyblue;
+      }
+      &:hover {
+        cursor: pointer;
+      }
+    }
+  }
+  .Tab-Content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    input {
+      width: 36%;
+      border: none;
+      border-bottom: 1px solid #EBEDEF;
+      background-color: transparent;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: start;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 100;
+      font-size: 1rem;
+      &::placeholder {
+        color: lightgray;
+      }
+      margin: 0.1rem;
+      &:focus {
+        outline: none;
+      }
+    }
+    button {
+      width: 36%;
+      border: none;
+      font-weight: 100;
+      margin: 0.5rem;
+      border-radius: 5px;
+      background: lightgray;
+      color: white;
+      padding: 0.5rem;
+      font-size: 1rem;
+      &:hover {
+        cursor: pointer;
+        background: skyblue;
+      }
+    }
+  }
+}
+
 .App {
   display: flex;
   width: 100vw;
@@ -79,6 +165,13 @@
   margin: 0 3px;
   width: 2rem;
   height: 2rem;
+  font-size: 1.25rem;
+  &:last-of-type {
+    font-size: 1.8rem;
+  }
+  display: flex;
+  align-items: center;
+  justify-content: center;;
   &:hover {
     cursor: pointer;
     background: #EBEDEF;

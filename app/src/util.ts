@@ -9,11 +9,12 @@ export const xhr = async (options: RequestOptions): Promise<any> => {
             'Content-Type': 'application/json',
             ...headers,
         },
+        credentials: 'include',
         body: body ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+       return null;
     }
 
     return response.json();

@@ -1,24 +1,59 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useCallback, useState, useRef } from 'react';
+import { xhr } from './util';
+import { User, UserLoginRequest, UserLoginResponse } from './types';
 import './App.scss';
 
 function Login() {
+  const [tab, setTab] = useState('login');
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const changeTab = useCallback((tab: string) => {
+    setTab(tab);
+  }, []);
+  const request = useCallback(() => {
+    if (usernameRef.current && passwordRef.current) {
+      const username = usernameRef.current.value;
+      const password = passwordRef.current.value;
+      if (username && password) {
+        xhr({
+          method: 'POST',
+          url: `/${tab}-user`,
+          body: { 
+            UserName: username, 
+            Password: password 
+          } as UserLoginRequest
+        }).then((res: UserLoginResponse) => {
+          if (res) {
+            console.log(tab + " successful", res);
+          } else {
+            console.error(tab + " failed", res);
+          }
+        })
+      }
+    }
+  }, [usernameRef, passwordRef, tab]);
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div id="Login">
+      <h1>CHATAPP</h1>
+      <div className="Tab-Container">
+        <div className="Tabs">
+          <button onClick={() => changeTab('login')} className={tab === 'login' ? 'active' : ''}>Login</button>
+          <button onClick={() => changeTab('register')} className={tab === 'register' ? 'active' : ''}>Register</button>
+        </div>
+        <div className="Tab-Content">
+          {
+            tab == 'login' ? (<>
+              <input type="text" placeholder="Username" ref={usernameRef} />
+              <input type="password" placeholder="Password" ref={passwordRef} />
+              <button onClick={request}>Login</button>
+              </>) : (<>
+              <input type="text" placeholder="Username" ref={usernameRef} />
+              <input type="password" placeholder="Password" ref={passwordRef} />
+              <button onClick={request}>Register</button>
+            </>)
+          }
+        </div>
+      </div>
     </div>
   );
 }
