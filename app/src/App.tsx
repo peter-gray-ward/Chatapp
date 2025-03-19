@@ -1,15 +1,16 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import './App.scss';
-import { User, ChatModalItems } from './types';
+import { User, ChatModalItems, Room, Post } from './types';
 import Modal from './Modal';
-import { xhr } from './util';
+import { xhr, capitalizeKeys } from './util';
 import * as signalR from '@microsoft/signalr';
+import { error } from 'console';
 
 const initialState = {
   user: {} as User
 };
 
-function App() {
+function App({ user }: { user: User }) {
   const [viewModal, setViewModal] = useState({
     chats: false,
     chat: false
@@ -19,25 +20,64 @@ function App() {
   });
   const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
   const [loggedInUsers, setLoggedInUsers] = useState<User[]>([]);
+  const [room, setRoom] = useState<Room|null>(null);
   const chatsModalOrigin = useRef<HTMLButtonElement | null>(null);
+  const chatInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadUsers = useCallback(() => {
     xhr({
       url: '/get-logged-in-users',
       method: 'GET'
     }).then((users: User[]) => {
-      console.log("loaded logged-in users", users);
-      for (let user of users) {
-        for (let key in user) {
-          let val = user[key];
-          let newKey = key.charAt(0).toUpperCase() + key.slice(1);
-          delete user[key];
-          user[newKey] = val;
+      if (users) {
+        for (let user of users) {
+          for (let key in user) {
+            let val = user[key];
+            let newKey = key.charAt(0).toUpperCase() + key.slice(1);
+            delete user[key];
+            user[newKey] = val;
+          }
         }
+        setLoggedInUsers(users);
       }
-      setLoggedInUsers(users);
     });
   }, []);
+
+  const goToChat = useCallback((u: User) => {
+    let userIds = user.Id + '|' + u.Id;
+    xhr({
+      url: `/go-to-chatroom?userIds=${userIds}`,
+      method: 'GET'
+    }).then((room: Room) => {
+      console.log("room:", room);
+      setRoom(room);
+      if (connection) {
+        connection.invoke('JoinRoom', room.Id);
+      }
+    });
+  }, [user, connection]);
+
+  const roomName = useMemo(() => {
+    if (room) {
+      let userIds = room.UserIds.split('|');
+      return loggedInUsers.filter((u: User) => userIds.includes(u.Id)).map((u: User) => u.UserName).join(', ');
+    } else {
+      return 'Empty Chat Room';
+    }
+  }, [room]);
+
+  const chat = useCallback((event: any) => {
+    if (chatInputRef.current && event.key.toUpperCase() == 'ENTER') {
+      const message = chatInputRef.current.value;
+      if (connection && message.trim() !== '') {
+        connection.send('SendMessage', room!.Id, message)
+          .then(() => {
+            chatInputRef.current!.value = '';
+          })
+          .catch(error => console.error("Error sending message: ", error));
+      }
+    }
+  }, [chatInputRef, room]);
 
   const handleResize = () => {
     setPagePositions({
@@ -62,7 +102,7 @@ function App() {
       .withAutomaticReconnect()
       .build();
 
-    console.log("SignalR connection created", newConnection);
+    //console.log("SignalR connection created", newConnection);
 
     setConnection(newConnection);
   }, []);
@@ -71,10 +111,21 @@ function App() {
     if (connection) {
       connection.start()
         .then(() => {
-          console.log('Connected to SignalR hub');
+          //console.log('Connected to SignalR hub');
 
-          connection.on('ReceiveMessage', (user, message) => {
-            console.log(`Message from ${user}: ${message}`);
+          connection.on('ReceiveMessage', (user, post: Post) => {
+            post = capitalizeKeys(post);
+            console.log("new message", post);
+            setRoom(prevRoom => {
+              if (!prevRoom) return prevRoom;
+              return {
+                ...prevRoom,
+                Posts: [
+                  ...prevRoom.Posts,
+                  post
+                ]
+              } as Room;
+            });
           });
 
           connection.on('UserConnected', (user: User) => {
@@ -104,6 +155,8 @@ function App() {
     }
   }, [connection, loadUsers]);
 
+  console.log(new Date().getTime());
+
   return (
     <div className="App">
       <div className="Chats">
@@ -121,10 +174,10 @@ function App() {
         </div>
         <div id="Chats-List">
           {
-            loggedInUsers.map((user: User, index: number) => (
-              <div key={index} className="Chats-User">
-                <img src={user.ProfileThumbnailBase64 || '/favicon.ico'} alt={`${user.UserName}'s profile`} />
-                <div>{user.UserName}</div>
+            loggedInUsers.filter((u: User) => u.Id !== user.Id).map((u: User, index: number) => (
+              <div key={index} className="Chats-User" onClick={() => goToChat(u)}>
+                <img src={u.ProfileThumbnailBase64 || '/favicon.ico'} alt={`${u.UserName}'s profile`} />
+                <div>{u.UserName}</div>
               </div>
             ))
           }
@@ -137,13 +190,28 @@ function App() {
         <div className="Header">
           <div id="Chat-Room-Title">
             <button>&lt;</button>
-            <h1>:Chat-room-title</h1>
+            <h1>{roomName}</h1>
           </div>
           <div className="Actions">
             <button>🔎</button>
             <button>📞</button>
             <button>≡</button>
           </div>
+        </div>
+        <div id="Chat-Content">
+          {
+            room?.Posts.map((post: Post, index: number) => {
+              return <div key={index} className={`Post${post.UserId == user.Id ? ' Self' : ''}`}>
+                {
+                  post.Text
+                }
+              </div>
+            })
+          }
+        </div>
+        <div id="Chat-Input">
+          <input type="text" placeholder="Type a message..." ref={chatInputRef} onKeyDown={chat}/>
+          <button>➤</button> 
         </div>
       </div>
     </div>

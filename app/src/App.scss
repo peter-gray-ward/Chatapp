@@ -203,6 +203,8 @@ html {
   height: 100%;
   max-width: calc(100vw - 300px);
   background: skyblue;
+  display: flex;
+  flex-direction: column;
 
   .Header {
     display: flex;
@@ -218,6 +220,44 @@ html {
     }
     .Actions {
       @extend .HeaderActions;
+    }
+  }
+
+  #Chat-Content {
+    flex-grow: 1;
+    width: 100%;
+
+    .Post {
+      padding: 1rem;
+
+      &.Self {
+        text-align: right;
+      }
+    }
+  }
+
+  #Chat-Input {
+    height: 3rem;
+    width: 100%;
+    display: flex;
+    input {
+      background-color: transparent;
+      border-bottom: 1px solid #EBEDEF;
+      width: 100%;
+      height: 100%;
+      padding: 1rem;
+      box-sizing: border-box;
+      font-size: 1.5rem;
+      border: none;
+      &:focus {
+        outline: none;
+      }
+      &::placeholder {
+        color: #EBEDEF;
+      }
+    }
+    button {
+      @extend .HeaderButton;
     }
   }
 }

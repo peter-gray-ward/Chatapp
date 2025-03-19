@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace ChatApp
 {
@@ -39,6 +40,8 @@ namespace ChatApp
         public string Id { get; set; } = string.Empty;
         [Required]
         public string UserIds { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
+        // navigation property for posts
+        public virtual List<Post> Posts { get; set; } = new List<Post>();
     }
+    
 }

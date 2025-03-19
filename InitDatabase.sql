@@ -18,6 +18,5 @@ CREATE TABLE IF NOT EXISTS "Posts" (
 -- Create the Room table
 CREATE TABLE IF NOT EXISTS "Rooms" (
     "Id" VARCHAR(255) PRIMARY KEY,
-    "UserIds" TEXT NOT NULL,
-    "Description" TEXT
+    "UserIds" TEXT NOT NULL
 );

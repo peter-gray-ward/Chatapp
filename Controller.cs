@@ -14,11 +14,13 @@ namespace ChatApp
         private readonly Regex userIdsPattern = new Regex(@"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(\|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})*$");
         private readonly TokenService _tokenService;
         private readonly ChatAppContext _context;
+        private readonly ChatHubUserManager _users;
 
-        public ChatAppController(TokenService tokenService, ChatAppContext context)
+        public ChatAppController(TokenService tokenService, ChatAppContext context, ChatHubUserManager users)
         {
             _tokenService = tokenService;
             _context = context;
+            _users = users;
         }
 
         [HttpPost]
@@ -74,7 +76,7 @@ namespace ChatApp
             {
                 HttpOnly = true,
                 Secure = false,
-                SameSite = SameSiteMode.None
+                SameSite = SameSiteMode.Lax
             });
             return Ok(new { user = existingUser, token });
         }
@@ -111,7 +113,7 @@ namespace ChatApp
         [Route("get-logged-in-users")]
         public IActionResult GetLoggedInUsers()
         {
-            var loggedInUsers = ChatHub.GetLoggedInUsers();
+            var loggedInUsers = _users.GetLoggedInUsers();
             if (loggedInUsers == null || !loggedInUsers.Any())
             {
                 return NotFound("No logged-in users found.");
@@ -129,8 +131,8 @@ namespace ChatApp
 
         [Authorize]
         [HttpGet]
-        [Route("create-chatroom")]
-        public IActionResult CreateChatRoom([FromQuery] string userIds, [FromQuery] string? description)
+        [Route("go-to-chatroom")]
+        public IActionResult GoToChatRoom([FromQuery] string userIds)
         {
             if (string.IsNullOrEmpty(userIds) || !userIdsPattern.IsMatch(userIds))
             {
@@ -141,11 +143,27 @@ namespace ChatApp
                 return BadRequest("At least two user IDs are required to create a chat room.");
             }
 
+            userIds = string.Join("|", userIds.Split("|")
+                .OrderBy(id => id)
+                .ToArray());
+
+            var existingRoom = _context.Rooms
+                .FirstOrDefault(r => r.UserIds == userIds);
+
+            if (existingRoom != null)
+            {
+                List<Post> posts = _context.Posts
+                    .Where(p => p.RoomId == existingRoom.Id)
+                    .OrderByDescending(p => p.DateTime)
+                    .ToList();
+                existingRoom.Posts = posts;
+                return Ok(existingRoom);
+            }
+
             var room = new Room
             {
                 Id = Guid.NewGuid().ToString(),
-                UserIds = userIds,
-                Description = description
+                UserIds = userIds
             };
 
             _context.Rooms.Add(room);

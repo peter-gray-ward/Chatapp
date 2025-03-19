@@ -3,7 +3,7 @@ import { xhr } from './util';
 import { User, UserLoginRequest, UserLoginResponse } from './types';
 import './App.scss';
 
-function Login({ setAuthenticated }: { setAuthenticated: React.Dispatch<React.SetStateAction<boolean>> }) {
+function Login({ setUser }: { setUser: React.Dispatch<React.SetStateAction<User|null>> }) {
   const [tab, setTab] = useState('login');
   const usernameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -25,7 +25,13 @@ function Login({ setAuthenticated }: { setAuthenticated: React.Dispatch<React.Se
         }).then((res: UserLoginResponse) => {
           if (res) {
             console.log(tab + " successful", res);
-            setAuthenticated(true);
+            for (let key in res.User) {
+              let val = res.User[key];
+              let newKey = key.charAt(0).toUpperCase() + key.slice(1);
+              delete res.User[key];
+              res.User[newKey] = val;
+            }
+            setUser(res.User);
           } else {
             console.error(tab + " failed", res);
           }

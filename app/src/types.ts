@@ -34,3 +34,17 @@ export const ChatModalItems: ModalItem[] = [
         route: '/profile'
     }
 ];
+
+export interface Post {
+    PostNumber: number;
+    DateTime: Date;
+    UserId: string;
+    RoomId: string;
+    Text: string;
+};
+
+export interface Room {
+    Id: string;
+    UserIds: string;
+    Posts: Post[];
+};

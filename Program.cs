@@ -31,10 +31,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddSignalR(); // Corrected typo
-builder.Services.AddSingleton<ChatHub>();
+builder.Services.AddScoped<ChatHub>();
 
 builder.Services.AddDbContext<ChatAppContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddSingleton<ChatHubUserManager>();
 
 // Add JWT and Cookie authentication
 byte[] key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new ArgumentNullException("Jwt:Key")); // Added null check
@@ -87,9 +89,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
 
 var app = builder.Build();
 
