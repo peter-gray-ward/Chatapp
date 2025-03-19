@@ -73,8 +73,8 @@ namespace ChatApp
             Response.Cookies.Append("chatapp-jwt", token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict
+                Secure = false,
+                SameSite = SameSiteMode.None
             });
             return Ok(new { user = existingUser, token });
         }
@@ -104,6 +104,27 @@ namespace ChatApp
                 return NotFound("User not found.");
             }
             return Ok(user);
+        }
+        
+        [Authorize]
+        [HttpGet]
+        [Route("get-logged-in-users")]
+        public IActionResult GetLoggedInUsers()
+        {
+            var loggedInUsers = ChatHub.GetLoggedInUsers();
+            if (loggedInUsers == null || !loggedInUsers.Any())
+            {
+                return NotFound("No logged-in users found.");
+            }
+
+            var userIds = loggedInUsers.Values.Distinct().ToList();
+            User[] users  = _context.Users.Where(u => userIds.Contains(u.Id.ToString())).ToArray();
+            if (users == null || !users.Any())
+            {
+                return NotFound("No users found for the logged-in user IDs.");
+            }
+
+            return Ok(users);
         }
 
         [Authorize]

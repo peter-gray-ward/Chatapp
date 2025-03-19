@@ -9,24 +9,30 @@ namespace ChatApp
         // A thread-safe collection to store logged-in users
         private static ConcurrentDictionary<string, string> LoggedInUsers = new ConcurrentDictionary<string, string>();
 
-        public override Task OnConnectedAsync()
+        public override async Task OnConnectedAsync()
         {
             var userId = Context.User?.FindFirst("sub")?.Value; // Extract the user ID from the JWT token
             if (userId == null)
             {
                 // If the user is not authenticated, disconnect them
                 Context.Abort();
-                return Task.CompletedTask;
+                return;
             }
             LoggedInUsers.TryAdd(Context.ConnectionId, userId);
-            return base.OnConnectedAsync();
+
+            await Clients.All.SendAsync("UserConnected", userId);
+
+            await base.OnConnectedAsync();
         }
 
-        public override Task OnDisconnectedAsync(Exception exception)
+        public override async Task OnDisconnectedAsync(Exception exception)
         {
             // Remove the user from the collection when they disconnect
             LoggedInUsers.TryRemove(Context.ConnectionId, out _);
-            return base.OnDisconnectedAsync(exception);
+
+            await Clients.All.SendAsync("UserDisconnected", null);
+
+            await base.OnDisconnectedAsync(exception);
         }
 
         public Task SendMessage(string user, string message)

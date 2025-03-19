@@ -15,6 +15,7 @@ export interface User {
     UserName: string;
     Password: string;
     ProfileThumbnailBase64?: string;
+    [key: string]: any;
 }
 
 export interface UserLoginResponse {
