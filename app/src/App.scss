@@ -1,3 +1,8 @@
+html {
+  --border-radius-large: 10px;
+  --border-radius-small: 5px;
+}
+
 #Front {
   display: flex;
   align-items: center;
@@ -71,7 +76,7 @@
       border: none;
       font-weight: 100;
       margin: 0.5rem;
-      border-radius: 5px;
+      border-radius: var(--border-radius-small);
       background: lightgray;
       color: white;
       padding: 0.5rem;
@@ -94,7 +99,33 @@
   width: calc(100% / 3.2);
   min-width: 300px;
   height: 100%;
-  background: whitesmoke;
+  background: white;
+
+  .Modal {
+    position: absolute;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    width: 100px;
+    height: 200px;
+    background-color: white;
+    border-radius: var(--border-radius-small);
+    list-style: none;
+    padding: 0;
+    li {
+      list-style: none;
+      padding: 0.15rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      &:hover {
+        background: whitesmoke;
+        cursor: pointer;
+      }
+      &:first-of-type {
+        border-top-left-radius: var(--border-radius-small);
+        border-top-right-radius: var(--border-radius-small);
+      }
+    }
+  }
 
   .Header {
     height: 10%;
@@ -112,7 +143,7 @@
   #Chats-Search {
     display: flex;
     background: #EBEDEF;
-    border-radius: 10px;
+    border-radius: var(--border-radius-large);
     padding: 1rem;
     margin: 0 1rem;
     input {

@@ -22,3 +22,14 @@ export interface UserLoginResponse {
     Token: string;
 }
 
+export interface ModalItem {
+    label: string;
+    route: string;
+}
+
+export const ChatModalItems: ModalItem[] = [
+    {
+        label: 'Profile',
+        route: '/profile'
+    }
+];
