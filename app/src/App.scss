@@ -3,6 +3,10 @@ html {
   --border-radius-small: 5px;
 }
 
+body {
+  overflow-y: hidden;
+}
+
 #Front {
   display: flex;
   align-items: center;
@@ -128,7 +132,6 @@ html {
   }
 
   #Chats-List {
-    height: calc(100% - 10%);
     overflow-y: auto;
     padding: 0 1rem;
     display: flex;
@@ -226,12 +229,42 @@ html {
   #Chat-Content {
     flex-grow: 1;
     width: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 
-    .Post {
-      padding: 1rem;
+    .Post-Container {
+      display: flex;
+      align-items: center;
+      .User-Id {
+        margin: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        p {
+          margin: 0.1rem;
+          font-family: system-ui;
+          text-align: center;
+          font-size: 0.75rem;
+        }
+        img {
+          width: 3rem;
+          height: 3rem;
+          border-radius: 100%;
+          margin: 0.1rem;
+        }
+      }
+      .Post {
+        padding: 1rem;
+        width: 35%;
+        background: white;
+        border-radius: 1pc;
+        margin: 0.5rem;
+        
+      }
 
       &.Self {
-        text-align: right;
+        align-self: end;
+        justify-content: end;
       }
     }
   }

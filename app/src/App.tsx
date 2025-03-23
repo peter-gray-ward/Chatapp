@@ -23,6 +23,7 @@ function App({ user }: { user: User }) {
   const [room, setRoom] = useState<Room|null>(null);
   const chatsModalOrigin = useRef<HTMLButtonElement | null>(null);
   const chatInputRef = useRef<HTMLInputElement | null>(null);
+  const chatContentRef = useRef<HTMLInputElement | null>(null);
 
   const loadUsers = useCallback(() => {
     xhr({
@@ -56,6 +57,13 @@ function App({ user }: { user: User }) {
       }
     });
   }, [user, connection]);
+
+  useEffect(() => {
+    chatContentRef.current?.lastElementChild?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'nearest' 
+    });
+  }, [room]);
 
   const roomName = useMemo(() => {
     if (room) {
@@ -115,7 +123,6 @@ function App({ user }: { user: User }) {
 
           connection.on('ReceiveMessage', (user, post: Post) => {
             post = capitalizeKeys(post);
-            console.log("new message", post);
             setRoom(prevRoom => {
               if (!prevRoom) return prevRoom;
               return {
@@ -198,12 +205,26 @@ function App({ user }: { user: User }) {
             <button>≡</button>
           </div>
         </div>
-        <div id="Chat-Content">
+        <div id="Chat-Content" ref={chatContentRef}>
           {
             room?.Posts.map((post: Post, index: number) => {
-              return <div key={index} className={`Post${post.UserId == user.Id ? ' Self' : ''}`}>
+              const isSelf: boolean = post.UserId == user.Id;
+              const postUser: User | undefined = loggedInUsers.filter((u: User) => u.Id == post.UserId).pop();
+              const userIdEl = <div className="User-Id">
+                <img src={postUser!.ProfileThumbnailBase64 || '/favicon.ico'} alt={`${postUser!.UserName}'s profile`} />
+                <p>{postUser!.UserName}</p>
+              </div>
+              return <div className={`Post-Container${isSelf ? ' Self' : ''}`}>
                 {
-                  post.Text
+                  !isSelf ? userIdEl : null
+                }
+                <div key={index} className={`Post`}>
+                  {
+                    post.Text
+                  }
+                </div>
+                {
+                  isSelf ? userIdEl : null
                 }
               </div>
             })
